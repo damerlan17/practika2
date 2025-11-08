@@ -1,0 +1,18 @@
+{% extends 'main/base.html' %}
+{% block content %}
+<h1>Главная страница</h1>
+<a href="{% url 'login' %}">Вход</a> | <a href="{% url 'register' %}">Регистрация</a>
+
+<h2>Последние выполненные задания (до 4)</h2>
+{% for req in completed_requests %}
+    <div>
+        <p><strong>{{ req.title }}</strong> ({{ req.category }}) - {{ req.created_at|date:"d.m.Y H:i" }}</p>
+        <img src="{{ req.image.url }}" alt="" width="200">
+    </div>
+
+{% empty %}
+    <p>Нет выполненных заявок</p>
+{% endfor %}
+
+<h3>Выполняется: {{ in_progress_count }}</h3>
+{% endblock %}
