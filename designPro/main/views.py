@@ -47,12 +47,15 @@ def register(request):
             messages.success(request, 'Регистрация прошла успешно. Вы можете войти.')
             return redirect('login')
         else:
-            # Если форма не прошла валидацию, снова отображаем её с ошибками
-            pass  # form уже содержит ошибки, просто передаём её в шаблон
+            # form.errors содержит ошибки, шаблон их отобразит
+            messages.error(request, "Исправьте ошибки в форме.")
     else:
         form = UserRegistrationForm()
-
     return render(request, 'main/register.html', {'form': form})
+
+def user_logout(request):
+    logout(request)
+    return redirect('home')
 
 
 @user_required
@@ -109,7 +112,72 @@ def superadmin_panel(request):
         'status_filter': status_filter
     })
 
+@admin_required
+def superadmin_panel(request):
+    # Получаем все заявки
+    requests = Request.objects.all().order_by('-created_at')
 
-def user_logout(request):
-    logout(request)
-    return redirect('home')
+    # Фильтрация по статусу
+    status_filter = request.GET.get('status')
+    if status_filter:
+        requests = requests.filter(status=status_filter)
+
+    # Категории
+    categories = Category.objects.all()
+
+    # Обработка добавления категории
+    if request.method == 'POST' and 'add_category' in request.POST:
+        cat_name = request.POST.get('category_name')
+        if cat_name:
+            Category.objects.create(name=cat_name)
+            messages.success(request, 'Категория добавлена.')
+        return redirect('superadmin')
+
+    # Обработка удаления категории
+    if 'delete_category' in request.POST:
+        cat_id = request.POST.get('category_id')
+        category = get_object_or_404(Category, id=cat_id)
+        category.delete()  # Удаляет и связанные заявки благодаря CASCADE
+        messages.success(request, 'Категория и связанные заявки удалены.')
+        return redirect('superadmin')
+
+    # Обработка смены статуса заявки
+    if 'request_id' in request.POST and 'status_new' in request.POST:
+        req_id = request.POST.get('request_id')
+        new_status = request.POST.get('status_new')
+        comment = request.POST.get('admin_comment', '').strip()
+        design_image = request.FILES.get('design_image')
+
+        req = get_object_or_404(Request, id=req_id)
+
+        # Проверяем, что статус можно изменить (только из 'new')
+        if req.status != 'new':
+            messages.error(request, f'Невозможно изменить статус заявки #{req.id}, так как она уже не "Новая".')
+            return redirect('superadmin')
+
+        # Проверки на основе нового статуса
+        if new_status == 'in_progress':
+            if not comment:
+                messages.error(request, f'Для заявки #{req.id} статус "Принято в работу" требует комментарий.')
+                return redirect('superadmin')
+            req.admin_comment = comment
+        elif new_status == 'done':
+            if not design_image:
+                messages.error(request, f'Для заявки #{req.id} статус "Выполнено" требует изображение дизайна.')
+                return redirect('superadmin')
+            req.design_image = design_image
+        else:
+            # Недопустимый статус (на всякий случай)
+            messages.error(request, f'Недопустимый статус: {new_status}')
+            return redirect('superadmin')
+
+        req.status = new_status
+        req.save()
+        messages.success(request, f'Статус заявки #{req.id} изменён на "{dict(Request.STATUS_CHOICES).get(new_status)}".')
+        return redirect('superadmin')
+
+    return render(request, 'main/superadmin.html', {
+        'requests': requests,
+        'categories': categories,
+        'status_filter': status_filter
+    })

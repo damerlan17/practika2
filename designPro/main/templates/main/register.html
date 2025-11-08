@@ -1,9 +1,25 @@
 {% extends 'main/base.html' %}
+
 {% block content %}
 <h2>Регистрация</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Зарегистрироватся</button>
+    {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+                <div class="field-error">{{ field.errors }}</div>
+            {% endif %}
+        </div>
+    {% endfor %}
+    <button type="submit">Зарегистрироваться</button>
 </form>
 {% endblock %}

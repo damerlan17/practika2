@@ -119,6 +119,14 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Папка, куда будут собраны все статические файлы (для продакшена)
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Папки, в которых Django будет искать статические файлы
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # Если есть общая папка static в корне проекта
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

@@ -1,8 +1,10 @@
+<!-- main/templates/main/superadmin.html -->
 {% extends 'main/base.html' %}
 {% block content %}
 <h2>Панель администратора</h2>
 <a href="{% url 'logout' %}">Выход</a>
 
+<!-- Добавление категории -->
 <h3>Добавить категорию</h3>
 <form method="post">
     {% csrf_token %}
@@ -10,6 +12,7 @@
     <button type="submit" name="add_category">Добавить</button>
 </form>
 
+<!-- Удаление категории -->
 <h3>Удалить категорию</h3>
 <form method="post">
     {% csrf_token %}
@@ -22,6 +25,7 @@
     <button type="submit" name="delete_category">Удалить</button>
 </form>
 
+<!-- Список заявок -->
 <h3>Заявки</h3>
 <form method="get">
     <label>Фильтр по статусу:</label>
@@ -37,7 +41,7 @@
 <ul>
     {% for req in requests %}
         <li>
-            {{ req.created_at|date:"d.m.Y H:i" }} - {{ req.title }} ({{ req.status }}) - {{ req.user.username }}
+            {{ req.created_at|date:"d.m.Y H:i" }} - {{ req.title }} ({{ req.status }}) - {{ req.user.username }} - {{ req.category.name }}
             {% if req.status == 'new' %}
                 <form method="post" style="display:inline;">
                     {% csrf_token %}
@@ -47,10 +51,12 @@
                         <option value="in_progress">Принято в работу</option>
                         <option value="done">Выполнено</option>
                     </select>
-                    <textarea name="admin_comment" placeholder="Комментарий (если статус 'Принято в работу')"></textarea>
-                    <input type="file" name="design_image" accept="image/*" placeholder="Дизайн (если статус 'Выполнено')">
+                    <textarea name="admin_comment" placeholder="Комментарий (если 'Принято в работу')"></textarea>
+                    <input type="file" name="design_image" accept="image/*" placeholder="Дизайн (если 'Выполнено')">
                     <button type="submit">Сохранить</button>
                 </form>
+            {% else %}
+                (статус изменить нельзя)
             {% endif %}
         </li>
     {% empty %}
