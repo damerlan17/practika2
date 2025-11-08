@@ -70,7 +70,7 @@ def user_profile(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'main/user_profile.html', {
+    return render(request, 'main/profile.html', {
         'page_obj': page_obj,
         'status_filter': status_filter,
     })

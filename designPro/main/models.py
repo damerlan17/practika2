@@ -6,8 +6,8 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     consent = models.BooleanField("Согласие на отработку ПД", default=False)
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'full_name', 'consent']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email', 'full_name', 'consent']
 
 
 class Category(models.Model):
