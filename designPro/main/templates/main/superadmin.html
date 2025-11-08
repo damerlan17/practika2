@@ -1,0 +1,60 @@
+{% extends 'main/base.html' %}
+{% block content %}
+<h2>Панель администратора</h2>
+<a href="{% url 'logout' %}">Выход</a>
+
+<h3>Добавить категорию</h3>
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="category_name" placeholder="Название категории" required>
+    <button type="submit" name="add_category">Добавить</button>
+</form>
+
+<h3>Удалить категорию</h3>
+<form method="post">
+    {% csrf_token %}
+    <select name="category_id" required>
+        <option value="">Выберите категорию</option>
+        {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" name="delete_category">Удалить</button>
+</form>
+
+<h3>Заявки</h3>
+<form method="get">
+    <label>Фильтр по статусу:</label>
+    <select name="status">
+        <option value="">Все</option>
+        <option value="new"> {% if status_filter == 'new' %}selected{% endif %}Новая</option>
+        <option value="in_progress"> {% if status_filter == 'in_progress' %}selected{% endif %}Принято в работу</option>
+        <option value="done"> {% if status_filter == 'done' %}selected{% endif %}Выполнено</option>
+    </select>
+    <button type="submit">Фильтровать</button>
+</form>
+
+<ul>
+    {% for req in requests %}
+        <li>
+            {{ req.created_at|date:"d.m.Y H:i" }} - {{ req.title }} ({{ req.status }}) - {{ req.user.username }}
+            {% if req.status == 'new' %}
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="request_id" value="{{ req.id }}">
+                    <select name="status_new" required>
+                        <option value="">Изменить статус</option>
+                        <option value="in_progress">Принято в работу</option>
+                        <option value="done">Выполнено</option>
+                    </select>
+                    <textarea name="admin_comment" placeholder="Комментарий (если статус 'Принято в работу')"></textarea>
+                    <input type="file" name="design_image" accept="image/*" placeholder="Дизайн (если статус 'Выполнено')">
+                    <button type="submit">Сохранить</button>
+                </form>
+            {% endif %}
+        </li>
+    {% empty %}
+        <li>Заявок нет.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

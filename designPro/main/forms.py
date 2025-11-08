@@ -3,6 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 import re
 from .models import User
+from .models import Request, Category
 
 class UserRegistrationForm(forms.ModelForm):
     password1 = forms.CharField(label='Пароль', widget=forms.PasswordInput)
@@ -35,3 +36,15 @@ class UserRegistrationForm(forms.ModelForm):
 class UserLoginForm(AuthenticationForm):
     username = forms.CharField(label='Логин')
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
+
+
+class CreateRequestForm(forms.ModelForm):
+    class Meta:
+        model = Request
+        fields = ['title', 'description', 'category', 'image']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'image': forms.FileInput(attrs={'class': 'form-control'}),
+        }
