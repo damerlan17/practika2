@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
-from .forms import UserRegistrationForm, UserLoginForm, CreateRequestForm
+from .forms import UserRegistrationForm, UserLoginForm, CreateRequestForm # <-- Импорт в начале
 from .models import Request, Category
 from .decorators import user_required, admin_required
 
@@ -65,57 +65,43 @@ def user_logout(request):
 
 @user_required
 def user_profile(request):
-    # получаем заявы текущего пользоваткля
+    # --- Форма создания заявки ---
+    form = None
+    if request.method == 'POST':
+        form = CreateRequestForm(request.POST, request.FILES)
+        if form.is_valid():
+            req = form.save(commit=False)
+            req.user = request.user  # Привязываем к текущему пользователю
+            req.save()
+            messages.success(request, 'Заявка успешно создана.')
+            return redirect('profile')
+        else:
+            # Если форма не валидна, она останется с ошибками и передастся в шаблон
+            pass
+    else:
+        # При GET-запросе создаём пустую форму
+        form = CreateRequestForm()
+
+    # Получаем заявки пользователя
     user_requests = Request.objects.filter(user=request.user).order_by('-created_at')
 
-    # Фильтрация по статусу
+    # Фильтрация по статусу (если передан параметр status)
     status_filter = request.GET.get('status')
     if status_filter:
         user_requests = user_requests.filter(status=status_filter)
 
-    # аггинация
+    # Пагинация (опционально)
     paginator = Paginator(user_requests, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Передаём и форму, и заявки в шаблон
     return render(request, 'main/profile.html', {
+        'form': form,  # <-- Вот она
         'page_obj': page_obj,
-        'status_filter': status_filter,
-    })
-
-
-@admin_required
-def superadmin_panel(request):
-    # олучаем все заявки
-    requests = Request.objects.all().order_by('-created_at')
-
-    status_filter = request.GET.get('status')
-    if status_filter:
-        requests = requests.filter(status=status_filter)
-
-    categories = Category.objects.all()
-
-    # Обработка добавления категории
-    if request.method == 'POST' and 'add_category' in request.POST:
-        cat_name = request.POST.get('category_name')
-        if cat_name:
-            Category.objects.create(name=cat_name)
-            messages.success(request, 'Категория добавлена.')
-        return redirect('superadmin')
-
-    # Обработка удаления категории
-    if 'delete_category' in request.POST:
-        cat_id = request.POST.get('category_id')
-        category = get_object_or_404(Category, id=cat_id)
-        category.delete()
-        messages.success(request, 'Категория и связанные заявки удалены.')
-        return redirect('superadmin')
-
-    return render(request, 'main/superadmin.html', {
-        'requests': requests,
-        'categories': categories,
         'status_filter': status_filter
     })
+
 
 @admin_required
 def superadmin_panel(request):
@@ -153,10 +139,6 @@ def superadmin_panel(request):
         comment = request.POST.get('admin_comment', '').strip()
         # --- Вот здесь получаем файл --->
         design_image = request.FILES.get('design_image')  # <-- name="design_image" из формы
-        # <--- Вот здесь
-
-        print("DEBUG: request.FILES =", request.FILES)
-        print("DEBUG: design_image =", design_image)
 
         req = get_object_or_404(Request, id=req_id)
 
@@ -175,6 +157,7 @@ def superadmin_panel(request):
             # --- Вот здесь проверяется файл --->
             if not design_image:  # <-- Если файл не передан
                 messages.error(request, f'Для заявки #{req.id} статус "Выполнено" требует изображение дизайна.')
+                print("DEBUG: design_image is None or empty") # <-- Добавим отладку
                 return redirect('superadmin')
             req.design_image = design_image  # <-- Присваиваем файл модели
             # <--- Вот здесь
@@ -202,6 +185,7 @@ def superadmin_panel(request):
         'is_filter_done': is_filter_done,
     })
 
+
 @user_required
 def delete_request(request, request_id):
     # Получаем заявку или 404
@@ -224,44 +208,3 @@ def delete_request(request, request_id):
         return redirect('profile')
 
     return redirect('profile')
-
-from .forms import UserRegistrationForm, UserLoginForm, CreateRequestForm
-
-@user_required
-def user_profile(request):
-    # --- Форма создания заявки ---
-    form = None
-    if request.method == 'POST':
-        form = CreateRequestForm(request.POST, request.FILES)
-        if form.is_valid():
-            req = form.save(commit=False)
-            req.user = request.user  # Привязываем к текущему пользователю
-            req.save()
-            messages.success(request, 'Заявка успешно создана.')
-            return redirect('profile')
-        else:
-            # Если форма не валидна, она останется с ошибками и передастся в шаблон
-            pass
-    else:
-        # При GET-запросе создаём пустую форму
-        form = CreateRequestForm()
-
-    # Получаем заявки пользователя
-    user_requests = Request.objects.filter(user=request.user).order_by('-created_at')
-
-    # Фильтрация по статусу (если передан параметр status)
-    status_filter = request.GET.get('status')
-    if status_filter:
-        user_requests = user_requests.filter(status=status_filter)
-
-    # Пагинация (опционально)
-    paginator = Paginator(user_requests, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    # Передаём и форму, и заявки в шаблон
-    return render(request, 'main/profile.html', {
-        'form': form,  # <-- Вот она
-        'page_obj': page_obj,
-        'status_filter': status_filter
-    })

@@ -3,6 +3,11 @@
 {% block title %}Админка - Design.pro{% endblock %}
 
 {% block content %}
+<!-- Ссылка на личный кабинет -->
+<div class="user-profile-link">
+    <a href="{% url 'profile' %}" class="btn btn-outline">Личный кабинет</a>
+</div>
+
 <div class="row">
     <div class="col-md-8">
         <div class="card">
@@ -15,8 +20,7 @@
                     <select name="status" class="form-control d-inline w-auto me-2">
                         <option value="">Все</option>
                         <option value="new" {% if is_filter_new %}selected{% endif %}>Новая</option>
-                        <option value="in_progress" {% if is_filter_in_progress %}selected{% endif %}>Принято в работу
-                        </option>
+                        <option value="in_progress" {% if is_filter_in_progress %}selected{% endif %}>Принято в работу</option>
                         <option value="done" {% if is_filter_done %}selected{% endif %}>Выполнено</option>
                     </select>
                     <button type="submit" class="btn btn-outline">Фильтровать</button>
@@ -24,41 +28,36 @@
 
                 <ul class="list-group">
                     {% for req in requests %}
-                    <li class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h5>{{ req.title }}</h5>
-                                <p>{{ req.description }}</p>
-                                <small class="text-muted">{{ req.created_at|date:"d.m.Y H:i" }} | {{ req.user.username
-                                    }} | {{ req.category.name }} | {{ req.status }}</small>
-                                {% if req.image %}
-                                <img src="{{ req.image.url }}" class="request-image mt-1" alt="Фото помещения"
-                                     style="max-width: 100px;">
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5>{{ req.title }}</h5>
+                                    <p>{{ req.description }}</p>
+                                    <small class="text-muted">{{ req.created_at|date:"d.m.Y H:i" }} | {{ req.user.username }} | {{ req.category.name }} | {{ req.status }}</small>
+                                    {% if req.image %}
+                                        <img src="{{ req.image.url }}" class="request-image mt-1" alt="Фото помещения" style="max-width: 100px;">
+                                    {% endif %}
+                                </div>
+                                {% if req.status == 'new' %}
+                                    <form method="post" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="request_id" value="{{ req.id }}">
+                                        <select name="status_new" class="form-control d-inline w-auto me-2">
+                                            <option value="">Изменить статус</option>
+                                            <option value="in_progress">Принято в работу</option>
+                                            <option value="done">Выполнено</option>
+                                        </select>
+                                        <textarea name="admin_comment" class="form-control d-inline w-auto me-2" placeholder="Комментарий (если 'Принято в работу')"></textarea>
+                                        <input type="file" name="design_image" accept="image/*" class="form-control d-inline w-auto me-2" placeholder="Дизайн (если 'Выполнено')">
+                                        <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+                                    </form>
+                                {% else %}
+                                    <span class="badge">Статус изменить нельзя</span>
                                 {% endif %}
                             </div>
-                            {% if req.status == 'new' %}
-                            <form method="post" class="admin-actions">
-                                {% csrf_token %}
-                                <input type="hidden" name="request_id" value="{{ req.id }}">
-                                <select name="status_new" class="form-control d-inline w-auto me-2">
-                                    <option value="">Изменить статус</option>
-                                    <option value="in_progress">Принято в работу</option>
-                                    <option value="done">Выполнено</option>
-                                </select>
-                                <textarea name="admin_comment" class="form-control d-inline w-auto me-2"
-                                          placeholder="Комментарий (если 'Принято в работу')"></textarea>
-                                <input type="file" name="design_image" accept="image/*"
-                                       class="form-control d-inline w-auto me-2"
-                                       placeholder="Дизайн (если 'Выполнено')">
-                                <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
-                            </form>
-                            {% else %}
-                            <span class="badge">Статус изменить нельзя</span>
-                            {% endif %}
-                        </div>
-                    </li>
+                        </li>
                     {% empty %}
-                    <li class="list-group-item">Заявок нет.</li>
+                        <li class="list-group-item">Заявок нет.</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -74,24 +73,23 @@
                 <form method="post" class="mb-3">
                     {% csrf_token %}
                     <div class="input-group">
-                        <input type="text" name="category_name" class="form-control" placeholder="Название категории"
-                               required>
+                        <input type="text" name="category_name" class="form-control" placeholder="Название категории" required>
                         <button type="submit" name="add_category" class="btn btn-success">Добавить</button>
                     </div>
                 </form>
 
                 <h5>Удалить категорию</h5>
-                <form method="post" enctype="multipart/form-data"> <!-- <-- Вот этот атрибут обязателен -->
+                <form method="post">
                     {% csrf_token %}
-                    <input type="hidden" name="request_id" value="{{ req.id }}">
-                    <select name="status_new" required>
-                        <option value="">Изменить статус</option>
-                        <option value="in_progress">Принято в работе</option>
-                        <option value="done">Выполнено</option>
-                    </select>
-                    <textarea name="admin_comment" placeholder="Комментарий (если 'Принято в работу')"></textarea>
-                    <input type="file" name="design_image" accept="image/*" placeholder="Дизайн (если 'Выполнено')">
-                    <button type="submit">Сохранить</button>
+                    <div class="input-group">
+                        <select name="category_id" class="form-control" required>
+                            <option value="">Выберите категорию</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" name="delete_category" class="btn btn-danger">Удалить</button>
+                    </div>
                 </form>
             </div>
         </div>

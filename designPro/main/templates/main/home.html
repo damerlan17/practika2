@@ -9,8 +9,14 @@
             <h2>Добро пожаловать в Design.pro</h2>
             <p>Создайте заявку на дизайн интерьера и получите профессиональные варианты оформления.</p>
             {% if user.is_authenticated %}
+                <!-- Если пользователь авторизован -->
                 <a href="{% url 'profile' %}" class="btn btn-primary">Перейти в личный кабинет</a>
+                {% if user.is_superuser %}
+                    <!-- Дополнительно для администратора -->
+                    <a href="{% url 'superadmin' %}" class="btn btn-info">Админка</a>
+                {% endif %}
             {% else %}
+                <!-- Если пользователь не авторизован -->
                 <a href="{% url 'register' %}" class="btn btn-success">Зарегистрироваться</a>
                 <a href="{% url 'login' %}" class="btn btn-outline">Войти</a>
             {% endif %}

@@ -6,18 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Design.pro{% endblock %}</title>
     <link rel="stylesheet" type="text/css" href="{% static 'main/css/style.css' %}">
-    {% block extra_css %}{% endblock %} <!-- Место для дополнительных CSS -->
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Шапка сайта -->
     <header class="main-header">
         <div class="container">
             <h1 class="logo">Design.pro</h1>
+            <a href="{% url 'home' %}" class="logo">Design.pro</a>
             <nav class="main-nav">
                 {% if user.is_authenticated %}
+                    <!-- Если пользователь авторизован -->
                     <span class="nav-text">Привет, {{ user.username }}!</span>
+                    <!-- Ссылка на личный кабинет обычного пользователя -->
+                    <a href="{% url 'profile' %}" class="nav-link">Личный кабинет</a>
+                    <!-- Если пользователь администратор -->
+                    {% if user.is_superuser %}
+                        <a href="{% url 'superadmin' %}" class="nav-link">Админка</a>
+                    {% endif %}
                     <a href="{% url 'logout' %}" class="nav-link">Выход</a>
                 {% else %}
+                    <!-- Если пользователь не авторизован -->
                     <a href="{% url 'login' %}" class="nav-link">Вход</a>
                     <a href="{% url 'register' %}" class="nav-link">Регистрация</a>
                 {% endif %}
@@ -42,10 +51,12 @@
         </div>
     </main>
 
-    <!-- Подвал сайта -->
+     <!-- Подвал сайта -->
     <footer class="main-footer">
         <div class="container">
             <p>&copy; {% now "Y" %} Design.pro. Все права защищены.</p>
+            <!-- Дополнительно: ссылка на главную в подвале -->
+            <a href="{% url 'home' %}">На главную</a>
         </div>
     </footer>
 </body>
