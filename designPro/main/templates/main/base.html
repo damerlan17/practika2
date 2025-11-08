@@ -1,22 +1,52 @@
 <!DOCTYPE html>
 {% load static %}
-<html>
+<html lang="ru">
 <head>
-    <title>Design.pro</title>
-    <link rel="stylesheet" href="{% static 'main/css/style.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Design.pro{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'main/css/style.css' %}">
+    {% block extra_css %}{% endblock %} <!-- Место для дополнительных CSS -->
 </head>
 <body>
-{% if user.is_authenticated %}
-        <p>{{ user.username }}</p>
-    {% endif %}
+    <!-- Шапка сайта -->
+    <header class="main-header">
+        <div class="container">
+            <h1 class="logo">Design.pro</h1>
+            <nav class="main-nav">
+                {% if user.is_authenticated %}
+                    <span class="nav-text">Привет, {{ user.username }}!</span>
+                    <a href="{% url 'logout' %}" class="nav-link">Выход</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="nav-link">Вход</a>
+                    <a href="{% url 'register' %}" class="nav-link">Регистрация</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
 
-    {% if messages %}
+    <!-- Основное содержимое -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Вывод сообщений Django -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
 
-        {% for message in messages %}
-            <div>{{ message }}</div>
-        {% endfor %}
-    {% endif %}
+            {% block content %}
+            {% endblock %}
+        </div>
+    </main>
 
-    {% block content %}{% endblock %}
+    <!-- Подвал сайта -->
+    <footer class="main-footer">
+        <div class="container">
+            <p>&copy; {% now "Y" %} Design.pro. Все права защищены.</p>
+        </div>
+    </footer>
 </body>
 </html>

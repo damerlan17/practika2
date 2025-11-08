@@ -22,15 +22,20 @@ def home(request):
 
 def user_login(request):
     if request.method == 'POST':
-        form = UserLoginForm(request, data=request.POST)
+        form = UserLoginForm(request, data=request.POST) # <-- Использует стандартную аутентификацию Django
         if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            if user.is_superuser:
-                return redirect('superadmin')  # или '/superadmin/'
+            user = form.get_user() # <-- form.get_user() возвращает пользователя или None
+            if user: # <-- Проверка, что пользователь существует и пароль верен
+                login(request, user)
+                if user.is_superuser:
+                    return redirect('superadmin')
+                else:
+                    return redirect('profile')
             else:
-                return redirect('profile')     # <-- Вот сюда должен попасть обычный пользователь
+                # <-- Сюда попадаем, если логин/пароль неверны
+                messages.error(request, 'Неверный логин или пароль.')
         else:
+            # <-- Сюда попадаем, если форма не прошла валидацию (например, пустые поля)
             messages.error(request, 'Неверный логин или пароль.')
     else:
         form = UserLoginForm()
@@ -146,7 +151,12 @@ def superadmin_panel(request):
         req_id = request.POST.get('request_id')
         new_status = request.POST.get('status_new')
         comment = request.POST.get('admin_comment', '').strip()
-        design_image = request.FILES.get('design_image')
+        # --- Вот здесь получаем файл --->
+        design_image = request.FILES.get('design_image')  # <-- name="design_image" из формы
+        # <--- Вот здесь
+
+        print("DEBUG: request.FILES =", request.FILES)
+        print("DEBUG: design_image =", design_image)
 
         req = get_object_or_404(Request, id=req_id)
 
@@ -162,10 +172,12 @@ def superadmin_panel(request):
                 return redirect('superadmin')
             req.admin_comment = comment
         elif new_status == 'done':
-            if not design_image:
+            # --- Вот здесь проверяется файл --->
+            if not design_image:  # <-- Если файл не передан
                 messages.error(request, f'Для заявки #{req.id} статус "Выполнено" требует изображение дизайна.')
                 return redirect('superadmin')
-            req.design_image = design_image
+            req.design_image = design_image  # <-- Присваиваем файл модели
+            # <--- Вот здесь
         else:
             # Недопустимый статус (на всякий случай)
             messages.error(request, f'Недопустимый статус: {new_status}')
@@ -173,11 +185,83 @@ def superadmin_panel(request):
 
         req.status = new_status
         req.save()
-        messages.success(request, f'Статус заявки #{req.id} изменён на "{dict(Request.STATUS_CHOICES).get(new_status)}".')
+        messages.success(request,
+                         f'Статус заявки #{req.id} изменён на "{dict(Request.STATUS_CHOICES).get(new_status)}".')
         return redirect('superadmin')
+
+    is_filter_new = status_filter == 'new'
+    is_filter_in_progress = status_filter == 'in_progress'
+    is_filter_done = status_filter == 'done'
 
     return render(request, 'main/superadmin.html', {
         'requests': requests,
         'categories': categories,
+        'status_filter': status_filter,
+        'is_filter_new': is_filter_new,
+        'is_filter_in_progress': is_filter_in_progress,
+        'is_filter_done': is_filter_done,
+    })
+
+@user_required
+def delete_request(request, request_id):
+    # Получаем заявку или 404
+    req = get_object_or_404(Request, id=request_id)
+
+    # Проверяем, что заявка принадлежит текущему пользователю
+    if req.user != request.user:
+        # Если заявка не его - ошибка доступа
+        raise PermissionDenied
+
+    # Проверяем статус: можно удалять только 'new'
+    if req.status != 'new':
+        messages.error(request, f'Невозможно удалить заявку "{req.title}", так как её статус уже изменён.')
+        return redirect('profile')
+
+    # Если всё в порядке - удаляем
+    if request.method == 'POST':
+        req.delete()
+        messages.success(request, 'Заявка успешно удалена.')
+        return redirect('profile')
+
+    return redirect('profile')
+
+from .forms import UserRegistrationForm, UserLoginForm, CreateRequestForm
+
+@user_required
+def user_profile(request):
+    # --- Форма создания заявки ---
+    form = None
+    if request.method == 'POST':
+        form = CreateRequestForm(request.POST, request.FILES)
+        if form.is_valid():
+            req = form.save(commit=False)
+            req.user = request.user  # Привязываем к текущему пользователю
+            req.save()
+            messages.success(request, 'Заявка успешно создана.')
+            return redirect('profile')
+        else:
+            # Если форма не валидна, она останется с ошибками и передастся в шаблон
+            pass
+    else:
+        # При GET-запросе создаём пустую форму
+        form = CreateRequestForm()
+
+    # Получаем заявки пользователя
+    user_requests = Request.objects.filter(user=request.user).order_by('-created_at')
+
+    # Фильтрация по статусу (если передан параметр status)
+    status_filter = request.GET.get('status')
+    if status_filter:
+        user_requests = user_requests.filter(status=status_filter)
+
+    # Пагинация (опционально)
+    paginator = Paginator(user_requests, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Передаём и форму, и заявки в шаблон
+    return render(request, 'main/profile.html', {
+        'form': form,  # <-- Вот она
+        'page_obj': page_obj,
         'status_filter': status_filter
     })

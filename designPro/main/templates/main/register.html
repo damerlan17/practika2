@@ -1,25 +1,33 @@
 {% extends 'main/base.html' %}
 
+{% block title %}Регистрация - Design.pro{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'main/css/register.css' %}">
+{% endblock %}
+
 {% block content %}
-<h2>Регистрация</h2>
-
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-{% endif %}
-
-<form method="post">
-    {% csrf_token %}
-    {% for field in form %}
-        <div class="form-group">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-                <div class="field-error">{{ field.errors }}</div>
-            {% endif %}
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-card-header">
+            <h3>Регистрация</h3>
         </div>
-    {% endfor %}
-    <button type="submit">Зарегистрироваться</button>
-</form>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group {% if field.errors %}field-error{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="error-text">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-success">Зарегистрироваться</button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

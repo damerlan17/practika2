@@ -58,3 +58,28 @@ class CreateRequestForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': 'form-control'}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
+
+class CreateRequestForm(forms.ModelForm):
+    class Meta:
+        model = Request
+        fields = ['title', 'description', 'category', 'image']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'image': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            # Проверка размера (2MB = 2 * 1024 * 1024 байт)
+            max_size_mb = 2
+            if image.size > max_size_mb * 1024 * 1024:
+                raise ValidationError(f'Размер файла не должен превышать {max_size_mb} МБ.')
+            # Проверка расширения файла (jpg, jpeg, png, bmp)
+            valid_extensions = ['.jpg', '.jpeg', '.png', '.bmp']
+            ext = image.name.lower().split('.')[-1]
+            if f'.{ext}' not in valid_extensions:
+                raise ValidationError('Формат файла не поддерживается. Разрешены: jpg, jpeg, png, bmp.')
+        return image

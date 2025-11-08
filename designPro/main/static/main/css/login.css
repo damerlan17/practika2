@@ -1,4 +1,4 @@
-.register-container {
+.login-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -6,7 +6,7 @@
   padding: 2rem 0;
 }
 
-.register-card {
+.login-card {
   width: 100%;
   max-width: 400px;
   background: white;
@@ -15,8 +15,8 @@
   padding: 1.5rem;
 }
 
-.register-card-header {
-  background-color: var(--success-color);
+.login-card-header {
+  background-color: var(--primary-color);
   color: white;
   padding: 0.75rem 1.5rem;
   margin: -1.5rem -1.5rem 1.5rem -1.5rem;

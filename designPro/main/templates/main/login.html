@@ -1,9 +1,33 @@
 {% extends 'main/base.html' %}
+
+{% block title %}Вход - Design.pro{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'main/css/login.css' %}">
+{% endblock %}
+
 {% block content %}
-<h2>Вход</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Войти</button>
-</form>
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-card-header">
+            <h3>Вход</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group {% if field.errors %}field-error{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="error-text">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">Войти</button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

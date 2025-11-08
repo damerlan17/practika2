@@ -1,55 +1,104 @@
 {% extends 'main/base.html' %}
+
+{% block title %}Личный кабинет - Design.pro{% endblock %}
+
 {% block content %}
-<h2>Ваш личный кабинет</h2>
-<a href="{% url 'logout' %}">Выход</a>
-
-<h3>Создать заявку</h3>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Отправить</button>
-</form>
-
-<h3>Ваши заявки</h3>
-<form method="get">
-    <label>Фильтр по статусу:</label>
-    <select name="status">
-        <option value="">Все</option>
-        <option value="new"> {% if status_filter == 'new' %}selected{% endif %}Новая</option>
-        <option value="in_progress"> {% if status_filter == 'in_progress' %}selected{% endif %}>Принято в работу</option>
-        <option value="done"> {% if status_filter == "done" %}selected{% endif %}Выполнено</option>
-    </select>
-    <button type="submit">Фильтровать</button>
-</form>
-
-<ul>
-    {% for req in page_obj %}
-        <li>
-            {{ req.created_at|date:"d.m.Y H:i" }} - {{ req.title }} ({{ req.status }})
-            {% if req.status == 'new' %}
-                <a href="{% url 'delete_request' req.id %}">Удалить</a>
-            {% endif %}
-        </li>
-    {% empty %}
-        <li>Заявок нет.</li>
-    {% endfor %}
-</ul>
-
-{% if page_obj.has_other_pages %}
-    <div class="pagination">
-        {% if page_obj.has_previous %}
-            <a href="?page=1">&laquo; first</a>
-            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
-        {% endif %}
-
-        <span class="current">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-        </span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-        {% endif %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3>Создать заявку</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="form-group {% if field.errors %}field-error{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <div class="error-text">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">Отправить заявку</button>
+                </form>
+            </div>
+        </div>
     </div>
-{% endif %}
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4>Фильтр заявок</h4>
+            </div>
+            <div class="card-body">
+                <form method="get">
+                    <label class="form-label">Фильтр по статусу:</label>
+                    <select name="status" class="form-control">
+                        <option value="">Все</option>
+                        <option value="new">{% if status_filter == 'new' %}selected{% endif %}>Новая</option>
+                        <option value="in_progress">{% if status_filter == 'in_progress' %}selected{% endif %}>Принято в
+                            работу
+                        </option>
+                        <option value="done">{% if status_filter == 'done' %}selected{% endif %}>Выполнено</option>
+                    </select>
+                    <button type="submit" class="btn btn-outline mt-2">Фильтровать</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-2">
+    <div class="col-full">
+        <div class="card">
+            <div class="card-header">
+                <h3>Ваши заявки</h3>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for req in page_obj %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5>{{ req.title }}</h5>
+                                <p>{{ req.description }}</p>
+                                <small class="text-muted">{{ req.created_at|date:"d.m.Y H:i" }} | {{ req.user.username
+                                    }} | {{ req.category.name }} | {{ req.status }}</small>
+                                {% if req.image %}
+                                <img src="{{ req.image.url }}" class="request-image mt-1" alt="Фото помещения"
+                                     style="max-width: 100px;">
+                                {% endif %}
+                            </div>
+                            {% if req.status == 'new' %}
+                            <!-- Вот ЭТА форма -->
+                            <form method="post" enctype="multipart/form-data"> <!-- <-- ВАЖНО -->
+                                {% csrf_token %}
+                                <input type="hidden" name="request_id" value="{{ req.id }}">
+                                <select name="status_new" class="form-control d-inline w-auto me-2">
+                                    <option value="">Изменить статус</option>
+                                    <option value="in_progress">Принято в работу</option>
+                                    <option value="done">Выполнено</option>
+                                </select>
+                                <textarea name="admin_comment" class="form-control d-inline w-auto me-2"
+                                          placeholder="Комментарий (если 'Принято в работу')"></textarea>
+                                <!-- Вот ПОЛЕ для файла -->
+                                <input type="file" name="design_image" accept="image/*"
+                                       class="form-control d-inline w-auto me-2"
+                                       placeholder="Дизайн (если 'Выполнено')"> <!-- <-- name="design_image" -->
+                                <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+                            </form>
+                            {% else %}
+                            <span class="badge">Статус изменить нельзя</span>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item">Заявок нет.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
