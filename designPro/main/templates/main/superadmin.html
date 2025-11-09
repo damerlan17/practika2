@@ -39,7 +39,7 @@
                                     {% endif %}
                                 </div>
                                 {% if req.status == 'new' %}
-                                    <form method="post" enctype="multipart/form-data">
+                                    <form method="post" enctype="multipart/form-data"  class="post_style" >
                                         {% csrf_token %}
                                         <input type="hidden" name="request_id" value="{{ req.id }}">
                                         <select name="status_new" class="form-control d-inline w-auto me-2">
