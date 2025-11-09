@@ -397,7 +397,7 @@ text-decoration: none;
 
 footer > div {
 display: flex;
-gap: 700px;
+gap: 100px;
 }
 
 footer > div > a {

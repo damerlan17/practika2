@@ -56,7 +56,23 @@
         <div class="container">
             <p>&copy; {% now "Y" %} Design.pro. Все права защищены.</p>
             <!-- Дополнительно: ссылка на главную в подвале -->
-            <a href="{% url 'home' %}">На главную</a>
+
+            {% if user.is_authenticated %}
+                    <!-- Если пользователь авторизован -->
+                    <!-- Ссылка на личный кабинет обычного пользователя -->
+                    <a href="{% url 'home' %}" class="nav-link">На главную</a>
+                    <a href="{% url 'profile' %}" class="nav-link">Личный кабинет</a>
+                    <!-- Если пользователь администратор -->
+                    {% if user.is_superuser %}
+                        <a href="{% url 'superadmin' %}" class="nav-link">Админка</a>
+                    {% endif %}
+                    <a href="{% url 'logout' %}" class="nav-link">Выход</a>
+                {% else %}
+                    <!-- Если пользователь не авторизован -->
+                    <a href="{% url 'login' %}" class="nav-link">Вход</a>
+                    <a href="{% url 'register' %}" class="nav-link">Регистрация</a>
+                {% endif %}
+
         </div>
     </footer>
 </body>
